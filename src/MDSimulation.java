@@ -33,11 +33,8 @@ public class MDSimulation {
         }
     }
 
-    public static class Particle implements Cloneable {
+    public static class Particle{
         private final int index;
-        private final int color_red;
-        private final int color_green;
-        private final int color_blue;
         private final double mass;
         private final double radius;
         private int count = 0;
@@ -49,9 +46,6 @@ public class MDSimulation {
             this.index = index;
             this.mass = mass;
             this.radius = radius;
-            this.color_red = color_red;
-            this.color_green = color_green;
-            this.color_blue = color_blue;
         }
 
         public double collidesX(double x) {
@@ -153,9 +147,9 @@ public class MDSimulation {
     }
 
     public static class Event implements Comparable<Event> {
-        private double t;
-        private Particle a;
-        private Particle b;
+        private final double t;
+        private final Particle a;
+        private final Particle b;
         private int count_a = 0;
         private int count_b = 0;
 
@@ -175,13 +169,13 @@ public class MDSimulation {
             return t;
         }
 
-        public Particle getParticle1() {
-            return a;
-        }
-
-        public Particle getParticle2() {
-            return b;
-        }
+//        public Particle getParticle1() {
+//            return a;
+//        }
+//
+//        public Particle getParticle2() {
+//            return b;
+//        }
 
         public int compareTo(Event E) {
             return Double.compare(t, E.getTime());
@@ -199,10 +193,10 @@ public class MDSimulation {
     }
 
     public static class ParticleCollisionSystem {
-        private static PriorityQueue<Event> event_line = new PriorityQueue<>();
+        private static final PriorityQueue<Event> event_line = new PriorityQueue<>();
         private static double L;
         private static double clock = 0.00;
-        private static List<Double> time_interval = new LinkedList<>();
+        private static final List<Double> time_interval = new LinkedList<>();
         private static final double K_BOLTZMANN = 1.380_648_52e-23;
 
         private static void move(List<Particle> particles, double time) {
@@ -314,9 +308,6 @@ public class MDSimulation {
                 timer = clock;
 
             }
-            System.out.println("Avg: " + getAvgCollisions() );
-            System.out.println("Tmp: " + getTemperature(particles));
-
 
         }
         public static double getAvgCollisions(){
@@ -332,26 +323,25 @@ public class MDSimulation {
     }
 
     public static class ReadFromFile {
-        private String dataFilePath;
-        private int N;
-        private Queue<Particle> particles;
+        private final String dataFilePath;
+        private final Queue<Particle> particles;
 
         public ReadFromFile(String dataFilePath) {
             this.dataFilePath = dataFilePath;
             particles = new LinkedList<>();
         }
 
-        private boolean readDataFile() {
+        private void readDataFile() {
             File dataFile = new File(dataFilePath);
             Scanner scanner;
             try {
                 scanner = new Scanner(dataFile);
             } catch (FileNotFoundException e) {
                 System.out.println("No such file " + dataFilePath);
-                return false;
+                return;
             }
-            N = scanner.nextInt();
-            for (int i = 0; i < N; i++) {
+            int n = scanner.nextInt();
+            for (int i = 0; i < n; i++) {
                 double rx = scanner.nextDouble();
                 double ry = scanner.nextDouble();
                 double vx = scanner.nextDouble();
@@ -367,7 +357,6 @@ public class MDSimulation {
                 particles.add(p);
             }
             scanner.close();
-            return true;
         }
 
         public List<Particle> getParticles() {
@@ -377,7 +366,6 @@ public class MDSimulation {
 
     public static class ExperimentRunner {
         private static List<Particle> particles;
-        String dataFilePath;
 
         ExperimentRunner(String dataFilePath) {
             ReadFromFile rf = new ReadFromFile(dataFilePath);
@@ -394,11 +382,19 @@ public class MDSimulation {
             long stopTime = System.currentTimeMillis();
             long elapseTime = stopTime - startTime;
         }
+        public static double getSystemTemperature(){
+            return ParticleCollisionSystem.getTemperature(particles);
+        }
+        public static double getAvgCollisions(){
+            return ParticleCollisionSystem.getAvgCollisions();
+        }
     }
 
     public static void main(String[] args) {
         String dataFilePath = "data/brownian.txt";
         ExperimentRunner runner = new ExperimentRunner(dataFilePath);
         ExperimentRunner.SimulationRunner(10,40000,4000000);
+        System.out.println("COL CNTS:" + ExperimentRunner.getAvgCollisions());
+        System.out.println("COL CNTS:" + ExperimentRunner.getSystemTemperature());
     }
 }
