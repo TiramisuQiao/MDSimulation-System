@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 
+
 public class MDSimulation {
     // the Vector is used to help store the data in the particle
     public static class Vector {
@@ -28,24 +29,31 @@ public class MDSimulation {
         public Vector add(double scaler, Vector v) {
             return new Vector(x + scaler * v.getX(), y + scaler * v.getY());
         }
-        public double getNormSq(){
+
+        public double getNormSq() {
             return x * x + y * y;
         }
     }
 
-    public static class Particle{
+    public static class Particle {
         private final int index;
         private final double mass;
         private final double radius;
         private int count = 0;
         private Vector position;
         private Vector velocity;
+        private int color_red;
+        private int color_green;
+        private int color_blue;
 
 
         public Particle(int index, double mass, double radius, int color_red, int color_green, int color_blue) {
             this.index = index;
             this.mass = mass;
             this.radius = radius;
+            this.color_red = color_red;
+            this.color_green = color_green;
+            this.color_blue = color_blue;
         }
 
         public double collidesX(double x) {
@@ -55,7 +63,7 @@ public class MDSimulation {
             if (velocity.getX() < 0) {
                 return ((radius - position.getX()) / velocity.getX());
             }
-            return -1;
+            return 1000000;
         }
 
         public double collidesY(double y) {
@@ -65,24 +73,27 @@ public class MDSimulation {
             if (velocity.getY() < 0) {
                 return ((radius - position.getY()) / velocity.getY());
             }
-            return -1;
+            return Double.POSITIVE_INFINITY;
         }
 
         public double collides(Particle p) {
+            if (this == p) {
+                return Double.POSITIVE_INFINITY;
+            }
             Vector dr = new Vector(this.position.getX() - p.position.getX(),
                     this.position.getY() - p.position.getY());
             Vector dv = new Vector(this.velocity.getX() - p.velocity.getX(),
                     this.velocity.getY() - p.velocity.getY());
             double dvdr = dv.dotProduct(dr);
             if (dvdr >= 0) {
-                return -1;
+                return Double.POSITIVE_INFINITY;
             }
             double dvdv = dv.dotProduct(dv);
             double drdr = dr.dotProduct(dr);
             double sigma = this.radius + p.radius;
             double dt = Math.pow(dvdr, 2) - dvdv * (drdr - Math.pow(sigma, 2));
             if (dt < 0) {
-                return -1;
+                return Double.POSITIVE_INFINITY;
             }
             return -((dvdr + Math.sqrt(dt)) / dvdv);
 
@@ -138,11 +149,33 @@ public class MDSimulation {
         public int getIndex() {
             return index;
         }
+
         public Vector getVelocity() {
             return velocity;
         }
+
         public double getMass() {
             return mass;
+        }
+
+        public int getColor_red() {
+            return color_red;
+        }
+
+        public int getColor_green() {
+            return color_green;
+        }
+
+        public int getColor_blue() {
+            return color_blue;
+        }
+
+        public Vector getPosition() {
+            return position;
+        }
+
+        public double getRadius() {
+            return radius;
         }
     }
 
@@ -160,7 +193,7 @@ public class MDSimulation {
             if (a != null) {
                 count_a = a.getCollisionCount();
             }
-            if (b != null){
+            if (b != null) {
                 count_b = b.getCollisionCount();
             }
         }
@@ -182,13 +215,18 @@ public class MDSimulation {
         }
 
         public boolean wasSuperveningEvent() {
-            if (a == null) {
-                return b.getCollisionCount() != count_b;
+            if (a != null && a.getCollisionCount() != count_a) {
+                return true;
             }
-            if (b == null) {
-                return a.getCollisionCount() != count_a;
-            }
-            return a.getCollisionCount() != count_a || b.getCollisionCount() != count_b;
+            return b != null && b.getCollisionCount() != count_b;
+        }
+
+        public Particle getParticleA() {
+            return a;
+        }
+
+        public Particle getParticleB() {
+            return b;
         }
     }
 
@@ -199,121 +237,82 @@ public class MDSimulation {
         private static final List<Double> time_interval = new LinkedList<>();
         private static final double K_BOLTZMANN = 1.380_648_52e-23;
 
-        private static void move(List<Particle> particles, double time) {
+        public ParticleCollisionSystem(double L) {
+            ParticleCollisionSystem.L = L;
+        }
+
+        private static void update(Particle p1, List<Particle> particles) {
+            if (p1 == null) return;
+
             for (Particle p : particles) {
-                p.move(time);
+                double dt = p1.collides(p);
+                if (dt != Double.POSITIVE_INFINITY)
+                    event_line.offer(new Event(clock + dt, p1, p));
             }
+
+            event_line.offer(new Event(clock + p1.collidesX(L), p1, null));
+            event_line.offer(new Event(clock + p1.collidesY(L), null, p1));
         }
 
-        private static boolean update(Particle a, Particle b) {
-            if (a == null && b == null) {
-                throw new IllegalArgumentException();
-            }
-            if (a != null && b != null) {
-                a.bounce(b);
-            } else if (a == null) {
-                b.bounceY();
-                return b.getIndex() != 1;
-            } else {
-                a.bounceX();
-                return a.getIndex() != 1;
-            }
-
-            return true;
-
-        }
-
-        private static void predict_wall(Particle p, double t_max) {
-            double tx = p.collidesX(L);
-            double ty = p.collidesY(L);
-            if (tx >= 0 && clock + tx <= t_max) {
-                event_line.offer(new Event(clock + tx, p, null));
-            }
-            if (ty >= 0 && clock + ty <= t_max) {
-                event_line.offer(new Event(clock + ty, null, p));
-            }
-
-        }
-
-        private static void predict_two(Particle a, Particle b, double t_max) {
-            double tt = a.collides(b);
-            if (tt >= 0 && clock + tt <= t_max) {
-                event_line.offer(new Event(clock + tt, a, b));
-            }
-        }
-
-        private static void predict(Particle p, List<Particle> particles, double t_max) {
-            predict_wall(p, t_max);
-            for (Particle p1 : particles) {
-                if (p.getIndex() < p1.getIndex()) {
-                    predict_two(p, p1, t_max);
-                }
-            }
-
-        }
-
-        private static void predict(List<Particle> particles, double t_max) {
+        public static void simulation(List<Particle> particles,
+                                      double t_max,
+                                      double e_max) {
+            double timer = 0;
             for (Particle p : particles) {
-                predict(p, particles, t_max);
+                update(p, particles);
             }
-        }
-
-        public static void simulation(
-                List<Particle> particles,
-                double box,
-                double t_max,
-                int e_max
-        ) {
-            L = box;
-            Particle v1 = new Particle(-1, 0, 0, 0, 0, 0);
-            Particle v2 = new Particle(0, 0, 0, 0, 0, 0);
-            v1.setPosition(new Vector(0, 0));
-            v2.setPosition(new Vector(L, L));
-            v1.setVelocity(new Vector(0, 0));
-            v2.setVelocity(new Vector(0, 0));
-
-            predict(particles,t_max);
-            double timer = 0.00;
-            int step = 0;
+            event_line.offer(new Event(0, null, null));
             while (!event_line.isEmpty()) {
-                // System.out.println("PASS ++");
-                Event nextLevel = event_line.poll();
-
-                assert nextLevel != null;
-                if (nextLevel.wasSuperveningEvent()) {
-                    continue;
-                }
-                if (e_max < (1 + step)) {
+                Event e = event_line.poll();
+                if(clock >= t_max){
                     break;
                 }
-                step = step + 1;
+                if (!e.wasSuperveningEvent()) {
+                    Particle a = e.getParticleA();
+                    Particle b = e.getParticleB();
+                    double interval = e.getTime() - clock;
+                    time_interval.add(interval);
+                    for (Particle p : particles) {
+                        p.move(interval);
+                    }
+                    clock = e.getTime();
+                    if (a != null && b != null) {
+                        a.bounce(b);
+                    } else if (a != null && b == null) {
+                        a.bounceX();
+                    } else if (a == null && b != null) {
+                        b.bounceY();
+                    } else if (a == null && b == null) {
+                        getDraw(particles, 0.5);
+                    }
+                    update(a,particles);
+                    update(b,particles);
 
-                clock = nextLevel.getTime();
-
-                move(particles, clock - timer);
-                boolean next_step = update(nextLevel.a, nextLevel.b);
-
-                time_interval.add(clock - timer);
-
-                if (nextLevel.a != null) {
-                    predict(nextLevel.a, particles, t_max);
                 }
-                if (nextLevel.b != null) {
-                    predict(nextLevel.b, particles, t_max);
-                }
-                if (!next_step) {
-                    event_line.clear();
-                }
-
-                timer = clock;
-
             }
 
         }
-        public static double getAvgCollisions(){
+
+
+        public static void getDraw(List<Particle> particles, double drawFreq) {
+            StdDraw.clear();
+            for (Particle p : particles) {
+                StdDraw.setPenColor(p.getColor_red(), p.getColor_green(), p.getColor_blue());
+                double rx = p.getPosition().getX();
+                double ry = p.getPosition().getY();
+                double r = p.getRadius();
+                StdDraw.filledCircle(rx, ry, r);
+            }
+            StdDraw.show();
+            StdDraw.pause(10);
+            event_line.offer(new Event(clock + 1.0 / drawFreq, null, null));
+        }
+
+        public static double getAvgCollisions() {
             return time_interval.stream().mapToDouble(t -> t).average().orElse(Double.NaN);
         }
-        public static double getTemperature(List<Particle> particles){
+
+        public static double getTemperature(List<Particle> particles) {
             double sum = particles.stream()
                     .map(p -> p.getMass() * p.getVelocity().getNormSq())
                     .mapToDouble(Double::doubleValue)
@@ -324,7 +323,7 @@ public class MDSimulation {
 
     public static class ReadFromFile {
         private final String dataFilePath;
-        private final Queue<Particle> particles;
+        private final List<Particle> particles;
 
         public ReadFromFile(String dataFilePath) {
             this.dataFilePath = dataFilePath;
@@ -374,26 +373,33 @@ public class MDSimulation {
         }
 
         public static void SimulationRunner( // List<Particle> particles,
-                                            double L,
-                                            double t_max,
-                                            int e_max){
+                                             double L,
+                                             double t_max,
+                                             int e_max) {
+            ParticleCollisionSystem pcs = new ParticleCollisionSystem(L);
             long startTime = System.currentTimeMillis();
-            ParticleCollisionSystem.simulation(particles, L, t_max, e_max);
+            ParticleCollisionSystem.simulation(particles, t_max, e_max);
             long stopTime = System.currentTimeMillis();
             long elapseTime = stopTime - startTime;
         }
-        public static double getSystemTemperature(){
+
+        public static double getSystemTemperature() {
             return ParticleCollisionSystem.getTemperature(particles);
         }
-        public static double getAvgCollisions(){
+
+        public static double getAvgCollisions() {
             return ParticleCollisionSystem.getAvgCollisions();
         }
     }
 
     public static void main(String[] args) {
+        //StdDraw.setCanvasSize(800, 800);
+        StdDraw.enableDoubleBuffering();
+        StdDraw.setXscale(0,10);
+        StdDraw.setYscale(0,10);
         String dataFilePath = "data/brownian.txt";
         ExperimentRunner runner = new ExperimentRunner(dataFilePath);
-        ExperimentRunner.SimulationRunner(10,40000,4000000);
+        ExperimentRunner.SimulationRunner(10, 40000, 4000000);
         System.out.println("COL CNTS:" + ExperimentRunner.getAvgCollisions());
         System.out.println("COL CNTS:" + ExperimentRunner.getSystemTemperature());
     }
