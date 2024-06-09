@@ -255,8 +255,8 @@ public class MDSimulation {
         }
 
         public static void simulation(List<Particle> particles,
-                                      double t_max,
-                                      double e_max) {
+                                      double t_max
+        ) {
             double timer = 0;
             for (Particle p : particles) {
                 update(p, particles);
@@ -304,7 +304,7 @@ public class MDSimulation {
                 StdDraw.filledCircle(rx, ry, r);
             }
             StdDraw.show();
-            StdDraw.pause(10);
+            StdDraw.pause(20);
             event_line.offer(new Event(clock + 1.0 / drawFreq, null, null));
         }
 
@@ -374,11 +374,10 @@ public class MDSimulation {
 
         public static void SimulationRunner( // List<Particle> particles,
                                              double L,
-                                             double t_max,
-                                             int e_max) {
+                                             double t_max){
             ParticleCollisionSystem pcs = new ParticleCollisionSystem(L);
             long startTime = System.currentTimeMillis();
-            ParticleCollisionSystem.simulation(particles, t_max, e_max);
+            ParticleCollisionSystem.simulation(particles, t_max);
             long stopTime = System.currentTimeMillis();
             long elapseTime = stopTime - startTime;
         }
@@ -393,14 +392,15 @@ public class MDSimulation {
     }
 
     public static void main(String[] args) {
-        //StdDraw.setCanvasSize(800, 800);
-        StdDraw.enableDoubleBuffering();
-        StdDraw.setXscale(0,10);
-        StdDraw.setYscale(0,10);
-        String dataFilePath = "data/brownian.txt";
-        ExperimentRunner runner = new ExperimentRunner(dataFilePath);
-        ExperimentRunner.SimulationRunner(10, 40000, 4000000);
-        System.out.println("COL CNTS:" + ExperimentRunner.getAvgCollisions());
-        System.out.println("COL CNTS:" + ExperimentRunner.getSystemTemperature());
+        String options = "Brownian motion";
+        if ( options.equals("Brownian motion")){
+            StdDraw.enableDoubleBuffering();
+            StdDraw.setXscale(0,10);
+            StdDraw.setYscale(0,10);
+            String dataFilePath = "data/brownian.txt";
+            ExperimentRunner runner = new ExperimentRunner(dataFilePath);
+            ExperimentRunner.SimulationRunner(10, 4000);
+        }
+
     }
 }
