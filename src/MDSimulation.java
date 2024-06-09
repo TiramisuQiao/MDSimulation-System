@@ -1,5 +1,9 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 
@@ -241,6 +245,8 @@ public class MDSimulation {
         private static double clock = 0.00;
         private static final List<Double> time_interval = new LinkedList<>();
         private static final List<Double> distance_interval = new LinkedList<>();
+        private static final List<Double> path_for_single = new LinkedList<>();
+        private static final List<Vector> velocity_recording = new LinkedList<>();
         private static final double K_BOLTZMANN = 1.380_648_52e-23;
 
         public ParticleCollisionSystem(double L) {
@@ -299,6 +305,9 @@ public class MDSimulation {
 
                 }
             }
+            for (Particle p: particles) {
+                velocity_recording.add(p.velocity);
+            }
 
         }
 
@@ -325,6 +334,9 @@ public class MDSimulation {
                                 p.position.getY() - oldPosition.getY());
                         double euclidean_distance = Math.sqrt(dr.getNormSq());
                         distance_interval.add(euclidean_distance);
+                        if (p.getIndex() == 1) {
+                            path_for_single.add(euclidean_distance);
+                        }
                     }
                     clock = e.getTime();
                     if (a != null && b != null) {
@@ -339,6 +351,17 @@ public class MDSimulation {
 
                 }
             }
+            if (writeFile) {
+                try (BufferedWriter writer = Files.newBufferedWriter(Paths.get("output.txt"))) {
+                    for (Double fp : path_for_single) {
+                        writer.write(fp.toString());
+                        writer.newLine();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
 
         }
 
@@ -369,12 +392,16 @@ public class MDSimulation {
                     .map(p -> p.getMass() * p.getVelocity().getNormSq())
                     .mapToDouble(Double::doubleValue)
                     .sum();
-            return (sum / particles.size()) / (3 * K_BOLTZMANN);
+            return (sum / particles.size()) / (2 * K_BOLTZMANN);
         }
 
         public static double getFreePath() {
             return distance_interval.stream().mapToDouble(d -> d).average().orElse(Double.NaN);
         }
+        public static List<Vector> getFinalVelocity(){
+            return velocity_recording;
+        }
+
     }
 
     public static class ReadFromFile {
@@ -421,11 +448,18 @@ public class MDSimulation {
 
     public static class ExperimentRunner {
         private static List<Particle> particles;
+        private static final double R = 8.314;
+        private static final double M = 0.0319998;
+
 
         ExperimentRunner(String dataFilePath) {
             ReadFromFile rf = new ReadFromFile(dataFilePath);
             rf.readDataFile();
             particles = rf.getParticles();
+        }
+
+        ExperimentRunner(List<Particle> particles) {
+            this.particles = particles;
         }
 
         public static void SimulationRunner( // List<Particle> particles,
@@ -435,9 +469,10 @@ public class MDSimulation {
             ParticleCollisionSystem pcs = new ParticleCollisionSystem(L);
             ParticleCollisionSystem.simulation(particles, t_max, drawFig);
         }
+
         public static void SimulationRunnerFreePath(double L,
                                                     double t_max,
-                                                    boolean WriteFile){
+                                                    boolean WriteFile) {
             ParticleCollisionSystem pcs = new ParticleCollisionSystem(L);
             ParticleCollisionSystem.simulationFreePath(particles, t_max, WriteFile);
         }
@@ -449,9 +484,59 @@ public class MDSimulation {
         public static double getAvgCollisions() {
             return ParticleCollisionSystem.getAvgCollisions();
         }
-        public static double getFreePath(){
-            double sum =  ParticleCollisionSystem.getFreePath();
-            return sum/particles.size();
+
+        public static double getFreePath() {
+            double sum = ParticleCollisionSystem.getFreePath();
+            return sum / particles.size();
+        }
+
+        public static double getRootMeanSquare() {
+            double temperature = getSystemTemperature();
+            return Math.sqrt((3 * R * temperature) / M);
+        }
+
+        public static double getRootMeanSquare(double temperature) {
+            return Math.sqrt((3 * R * temperature) / M);
+        }
+
+        public static List<Particle> getParticles() {
+            return particles;
+        }
+    }
+
+    public static class Generator {
+        final int N;
+        List<Particle> particles;
+        private static double T;
+        private static double m;
+        static final double K_BOLTZMANN = 1.380_648_52e-23;
+        public Generator(int N,double T,double m) {
+            particles = new LinkedList<>();
+            this.N = N;
+            this.T = T;
+            this.m = m;
+        }
+
+        public List<Particle> particlesWithMaxwellPDF() {
+            for (int i = 0; i < N; i++) {
+                double rx = StdRandom.uniformDouble(1,9999)/1000;
+                double ry = StdRandom.uniformDouble(1,9999)/1000;
+                double sigma = K_BOLTZMANN * T / m;
+                double vx = StdRandom.gaussian(0,sigma);
+                double vy = StdRandom.gaussian(0,sigma);
+                double mass = m;
+                double radius = 0.01;
+                Particle p = new Particle(i,mass,radius,255,255,255);
+                Vector velocity = new Vector(vx, vy);
+                p.setVelocity(velocity);
+                Vector position = new Vector(rx, ry);
+                p.setPosition(position);
+                particles.add(p);
+            }
+            return particles;
+        }
+        public double getSigma(){
+            return K_BOLTZMANN * T / m;
         }
     }
 
@@ -469,19 +554,17 @@ public class MDSimulation {
             String dataFilePath = "data/brownian.txt";
             ExperimentRunner runner = new ExperimentRunner(dataFilePath);
             ExperimentRunner.SimulationRunner(4, 400, drawFig);
-        }
-        else if (options.equals("Free path and free time")) {
+        } else if (options.equals("Free path and free time")) {
             boolean WriteFile = true;
             String dataFilePath = "data/brownian.txt";
             ExperimentRunner runner = new ExperimentRunner(dataFilePath);
-            ExperimentRunner.SimulationRunnerFreePath(4, 400, WriteFile);
+            ExperimentRunner.SimulationRunnerFreePath(20, 4000, WriteFile);
             double meanFreePath = ExperimentRunner.getFreePath();
             System.out.println("Mean Free Path: " + meanFreePath);
             double meanFreeTime = ExperimentRunner.getAvgCollisions();
             System.out.println("Mean Free Time: " + meanFreeTime);
 
-        }
-        else if (options.equals("Collision frequency")) {
+        } else if (options.equals("Collision frequency")) {
             boolean drawFig = false;
             String dataFilePath = "data/brownian.txt";
             ExperimentRunner runner = new ExperimentRunner(dataFilePath);
@@ -489,7 +572,46 @@ public class MDSimulation {
             double intervalBetweenCollisions = ExperimentRunner.getAvgCollisions();
             double CollisionFreq = 1 / intervalBetweenCollisions;
             System.out.println("The Collision frequency is " + CollisionFreq);
-        }else{
+        } else if (options.equals("Root mean-square velocity")) {
+            boolean WriteFile = false;
+            String dataFilePath = "data/brownian.txt";
+            ExperimentRunner runner = new ExperimentRunner(dataFilePath);
+            ExperimentRunner.SimulationRunnerFreePath(10, 4000, WriteFile);
+            double meanFreePath = ExperimentRunner.getFreePath();
+            double intervalBetweenCollisions = ExperimentRunner.getAvgCollisions();
+            double CollisionFreq = 1 / intervalBetweenCollisions;
+            double RMS_velocity = meanFreePath * CollisionFreq;
+            System.out.println("Root mean-square velocity is " + RMS_velocity);
+        } else if (options.equals("Root mean-square velocity-Temperature")) {
+            final double T = 298.15;
+            double RMS_velocity = ExperimentRunner.getRootMeanSquare(T);
+            System.out.println("Root mean-square velocity is " + RMS_velocity);
+        } else if (options.equals("Maxwell-Boltzmann distribution")) {
+            boolean drawFig = false;
+            Generator pg = new Generator(100,98,5.23e-23);
+            List<Particle> particles = new LinkedList<>();
+            particles = pg.particlesWithMaxwellPDF();
+            ParticleCollisionSystem pcs = new ParticleCollisionSystem(12);
+            ParticleCollisionSystem.simulation(particles,4000,drawFig);
+            List<Vector> recordings = ParticleCollisionSystem.getFinalVelocity();
+            List<Double> velocities = new ArrayList<>();
+            for(Vector v : recordings) {
+                velocities.add(Math.sqrt(v.getNormSq()));
+            }
+            double[] veloArray = velocities.stream().mapToDouble(Double::doubleValue).toArray();
+            double mean = StdStats.mean(veloArray);
+            double sigma = StdStats.var(veloArray);
+            final double CONST_SIGMA = pg.getSigma();
+            final double EXP_MU = CONST_SIGMA * Math.sqrt(Math.PI / 2);
+            final double EXP_SIGMA = (2 - Math.PI / 2 ) * Math.pow(CONST_SIGMA,2);
+            System.out.println("Except average: " + EXP_MU);
+            System.out.println("Except sigma: " + EXP_SIGMA);
+
+            System.out.println("Calculated average: " + mean);
+            System.out.println("Calculated sigma: " + sigma);
+
+
+        } else {
             System.out.println("Invalid option");
         }
 
