@@ -594,6 +594,8 @@ public class MDSimulation {
             ParticleCollisionSystem pcs = new ParticleCollisionSystem(12);
             ParticleCollisionSystem.simulation(particles,4000,drawFig);
             List<Vector> recordings = ParticleCollisionSystem.getFinalVelocity();
+
+
             List<Double> velocities = new ArrayList<>();
             for(Vector v : recordings) {
                 velocities.add(Math.sqrt(v.getNormSq()));
@@ -606,11 +608,8 @@ public class MDSimulation {
             final double EXP_SIGMA = (2 - Math.PI / 2 ) * Math.pow(CONST_SIGMA,2);
             System.out.println("Except average: " + EXP_MU);
             System.out.println("Except sigma: " + EXP_SIGMA);
-
             System.out.println("Calculated average: " + mean);
             System.out.println("Calculated sigma: " + sigma);
-
-
         } else {
             System.out.println("Invalid option");
         }

@@ -133,8 +133,12 @@ Calculated average: 89.61811894418628
 
 Calculated sigma: 2461.709990113346
 
-
-
+And in T = 98 K, the hist plot can be shown:
+- Maxwell Distribution in x and y axis
+![fig5-1.png](img/fig5-1.png)
+![fig5-2.png](img/fig5-2.png)
+- Rayleigh Distribution in 2-D space
+![fig5-3.png](img/fig5-3.png)
 
 ### Pressure
 
