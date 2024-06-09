@@ -33,6 +33,11 @@ public class MDSimulation {
         public double getNormSq() {
             return x * x + y * y;
         }
+
+        @Override
+        protected Vector clone() {
+            return new Vector(this.x, this.y);
+        }
     }
 
     public static class Particle {
@@ -235,6 +240,7 @@ public class MDSimulation {
         private static double L;
         private static double clock = 0.00;
         private static final List<Double> time_interval = new LinkedList<>();
+        private static final List<Double> distance_interval = new LinkedList<>();
         private static final double K_BOLTZMANN = 1.380_648_52e-23;
 
         public ParticleCollisionSystem(double L) {
@@ -262,12 +268,12 @@ public class MDSimulation {
             for (Particle p : particles) {
                 update(p, particles);
             }
-            if (drawFig){
+            if (drawFig) {
                 event_line.offer(new Event(0, null, null));
             }
             while (!event_line.isEmpty()) {
                 Event e = event_line.poll();
-                if(clock >= t_max){
+                if (clock >= t_max) {
                     break;
                 }
                 if (!e.wasSuperveningEvent()) {
@@ -286,10 +292,50 @@ public class MDSimulation {
                     } else if (a == null && b != null) {
                         b.bounceY();
                     } else if (a == null && b == null) {
-                        getDraw(particles, 0.5,drawFig);
+                        getDraw(particles, 0.5, drawFig);
                     }
-                    update(a,particles);
-                    update(b,particles);
+                    update(a, particles);
+                    update(b, particles);
+
+                }
+            }
+
+        }
+
+        public static void simulationFreePath(List<Particle> particles,
+                                              double t_max,
+                                              boolean writeFile) {
+            for (Particle p : particles) {
+                update(p, particles);
+            }
+            while (!event_line.isEmpty()) {
+                Event e = event_line.poll();
+                if (clock >= t_max) {
+                    break;
+                }
+                if (!e.wasSuperveningEvent()) {
+                    Particle a = e.getParticleA();
+                    Particle b = e.getParticleB();
+                    double interval = e.getTime() - clock;
+                    time_interval.add(interval);
+                    for (Particle p : particles) {
+                        Vector oldPosition = p.position.clone();
+                        p.move(interval);
+                        Vector dr = new Vector(p.position.getX() - oldPosition.getX(),
+                                p.position.getY() - oldPosition.getY());
+                        double euclidean_distance = Math.sqrt(dr.getNormSq());
+                        distance_interval.add(euclidean_distance);
+                    }
+                    clock = e.getTime();
+                    if (a != null && b != null) {
+                        a.bounce(b);
+                    } else if (a != null && b == null) {
+                        a.bounceX();
+                    } else {
+                        b.bounceY();
+                    }
+                    update(a, particles);
+                    update(b, particles);
 
                 }
             }
@@ -297,8 +343,8 @@ public class MDSimulation {
         }
 
 
-        public static void getDraw(List<Particle> particles, double drawFreq,boolean drawFig) {
-            if (!drawFig){
+        public static void getDraw(List<Particle> particles, double drawFreq, boolean drawFig) {
+            if (!drawFig) {
                 return;
             }
             StdDraw.clear();
@@ -324,6 +370,10 @@ public class MDSimulation {
                     .mapToDouble(Double::doubleValue)
                     .sum();
             return (sum / particles.size()) / (3 * K_BOLTZMANN);
+        }
+
+        public static double getFreePath() {
+            return distance_interval.stream().mapToDouble(d -> d).average().orElse(Double.NaN);
         }
     }
 
@@ -381,12 +431,15 @@ public class MDSimulation {
         public static void SimulationRunner( // List<Particle> particles,
                                              double L,
                                              double t_max,
-                                             boolean drawFig){
+                                             boolean drawFig) {
             ParticleCollisionSystem pcs = new ParticleCollisionSystem(L);
-            long startTime = System.currentTimeMillis();
-            ParticleCollisionSystem.simulation(particles, t_max,drawFig);
-            long stopTime = System.currentTimeMillis();
-            long elapseTime = stopTime - startTime;
+            ParticleCollisionSystem.simulation(particles, t_max, drawFig);
+        }
+        public static void SimulationRunnerFreePath(double L,
+                                                    double t_max,
+                                                    boolean WriteFile){
+            ParticleCollisionSystem pcs = new ParticleCollisionSystem(L);
+            ParticleCollisionSystem.simulationFreePath(particles, t_max, WriteFile);
         }
 
         public static double getSystemTemperature() {
@@ -396,29 +449,48 @@ public class MDSimulation {
         public static double getAvgCollisions() {
             return ParticleCollisionSystem.getAvgCollisions();
         }
+        public static double getFreePath(){
+            double sum =  ParticleCollisionSystem.getFreePath();
+            return sum/particles.size();
+        }
     }
 
     public static void main(String[] args) {
-        String options = "Collision frequency";
-        if ( options.equals("Brownian motion")){
-            boolean drawFig = false;
-            if (drawFig){
+        Scanner input = new Scanner(System.in);
+        String options = input.nextLine();
+        // String options = "Free path and free time";
+        if (options.equals("Brownian motion")) {
+            boolean drawFig = true;
+            if (drawFig) {
                 StdDraw.enableDoubleBuffering();
-                StdDraw.setXscale(0,10);
-                StdDraw.setYscale(0,10);
+                StdDraw.setXscale(0, 4);
+                StdDraw.setYscale(0, 4);
             }
             String dataFilePath = "data/brownian.txt";
             ExperimentRunner runner = new ExperimentRunner(dataFilePath);
-            ExperimentRunner.SimulationRunner(10, 40,drawFig);
+            ExperimentRunner.SimulationRunner(4, 400, drawFig);
         }
-        if(options.equals("Collision frequency")){
+        else if (options.equals("Free path and free time")) {
+            boolean WriteFile = true;
+            String dataFilePath = "data/brownian.txt";
+            ExperimentRunner runner = new ExperimentRunner(dataFilePath);
+            ExperimentRunner.SimulationRunnerFreePath(4, 400, WriteFile);
+            double meanFreePath = ExperimentRunner.getFreePath();
+            System.out.println("Mean Free Path: " + meanFreePath);
+            double meanFreeTime = ExperimentRunner.getAvgCollisions();
+            System.out.println("Mean Free Time: " + meanFreeTime);
+
+        }
+        else if (options.equals("Collision frequency")) {
             boolean drawFig = false;
             String dataFilePath = "data/brownian.txt";
             ExperimentRunner runner = new ExperimentRunner(dataFilePath);
-            ExperimentRunner.SimulationRunner(10, 4000,drawFig);
+            ExperimentRunner.SimulationRunner(10, 4000, drawFig);
             double intervalBetweenCollisions = ExperimentRunner.getAvgCollisions();
             double CollisionFreq = 1 / intervalBetweenCollisions;
             System.out.println("The Collision frequency is " + CollisionFreq);
+        }else{
+            System.out.println("Invalid option");
         }
 
     }

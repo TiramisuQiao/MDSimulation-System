@@ -9,7 +9,7 @@ Any suggestions is welcome to show.
 ## TO-DO List
 
 1. - [x] Brownian motion
-2. - [ ] Free path and free time
+2. - [x] Free path and free time
 3. - [x] Collision frequency
 4. - [ ] Root mean-square velocity
 5. - [ ] Maxwell-Boltzmann distribution
@@ -48,8 +48,22 @@ The consistency with expected random motion and diffusion patterns confirms the 
 our simulation.
 
 ### Free path and free time
+Free path = distance a particle travels between collisions. Plot histogram. 
+Mean free path = average free path length over all particles. As temperature 
+increases, mean free path increases (holding pressure constant). Compute free 
+time length = time elapsed before a particle collides with another particle 
+or wall.
+
+We can store the distance interval between two events, also the time intervals.
+Evaluating the Collision with brownian dataset, Boxsize is 10 in t_max 4000.
+
+Mean Free Path: 9.628867535876509E-4
+
+Mean Free Time: 0.010477422440390472
 
 ### Collision frequency
+
+Number of collisions per second
 
 We can store the time interval between two events, then we can calculate the SUM
 of the intervals. Then it can be calculated as:
