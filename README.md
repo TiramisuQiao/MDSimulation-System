@@ -10,7 +10,7 @@ Any suggestions is welcome to show.
 
 1. - [x] Brownian motion
 2. - [ ] Free path and free time
-3. - [ ] Collision frequency
+3. - [x] Collision frequency
 4. - [ ] Root mean-square velocity
 5. - [ ] Maxwell-Boltzmann distribution
 6. - [ ] Pressure
@@ -50,6 +50,16 @@ our simulation.
 ### Free path and free time
 
 ### Collision frequency
+
+We can store the time interval between two events, then we can calculate the SUM
+of the intervals. Then it can be calculated as:
+
+f = N / sum(delta t)
+
+Where N is the number of intervals and delta t is each interval length.
+
+Evaluating the Collision Frequency with brownian dataset, BoxSize is 10 in t_max 4000,
+The Collision frequency is 7.050855584767143
 
 ### Root mean-square velocity
 

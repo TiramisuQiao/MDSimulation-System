@@ -255,13 +255,16 @@ public class MDSimulation {
         }
 
         public static void simulation(List<Particle> particles,
-                                      double t_max
+                                      double t_max,
+                                      boolean drawFig
         ) {
             double timer = 0;
             for (Particle p : particles) {
                 update(p, particles);
             }
-            event_line.offer(new Event(0, null, null));
+            if (drawFig){
+                event_line.offer(new Event(0, null, null));
+            }
             while (!event_line.isEmpty()) {
                 Event e = event_line.poll();
                 if(clock >= t_max){
@@ -283,7 +286,7 @@ public class MDSimulation {
                     } else if (a == null && b != null) {
                         b.bounceY();
                     } else if (a == null && b == null) {
-                        getDraw(particles, 0.5);
+                        getDraw(particles, 0.5,drawFig);
                     }
                     update(a,particles);
                     update(b,particles);
@@ -294,7 +297,10 @@ public class MDSimulation {
         }
 
 
-        public static void getDraw(List<Particle> particles, double drawFreq) {
+        public static void getDraw(List<Particle> particles, double drawFreq,boolean drawFig) {
+            if (!drawFig){
+                return;
+            }
             StdDraw.clear();
             for (Particle p : particles) {
                 StdDraw.setPenColor(p.getColor_red(), p.getColor_green(), p.getColor_blue());
@@ -374,10 +380,11 @@ public class MDSimulation {
 
         public static void SimulationRunner( // List<Particle> particles,
                                              double L,
-                                             double t_max){
+                                             double t_max,
+                                             boolean drawFig){
             ParticleCollisionSystem pcs = new ParticleCollisionSystem(L);
             long startTime = System.currentTimeMillis();
-            ParticleCollisionSystem.simulation(particles, t_max);
+            ParticleCollisionSystem.simulation(particles, t_max,drawFig);
             long stopTime = System.currentTimeMillis();
             long elapseTime = stopTime - startTime;
         }
@@ -392,14 +399,26 @@ public class MDSimulation {
     }
 
     public static void main(String[] args) {
-        String options = "Brownian motion";
+        String options = "Collision frequency";
         if ( options.equals("Brownian motion")){
-            StdDraw.enableDoubleBuffering();
-            StdDraw.setXscale(0,10);
-            StdDraw.setYscale(0,10);
+            boolean drawFig = true;
+            if (drawFig){
+                StdDraw.enableDoubleBuffering();
+                StdDraw.setXscale(0,10);
+                StdDraw.setYscale(0,10);
+            }
             String dataFilePath = "data/brownian.txt";
             ExperimentRunner runner = new ExperimentRunner(dataFilePath);
-            ExperimentRunner.SimulationRunner(10, 4000);
+            ExperimentRunner.SimulationRunner(10, 4000,drawFig);
+        }
+        if(options.equals("Collision frequency")){
+            boolean drawFig = false;
+            String dataFilePath = "data/brownian.txt";
+            ExperimentRunner runner = new ExperimentRunner(dataFilePath);
+            ExperimentRunner.SimulationRunner(10, 4000,drawFig);
+            double intervalBetweenCollisions = ExperimentRunner.getAvgCollisions();
+            double CollisionFreq = 1 / intervalBetweenCollisions;
+            System.out.println("The Collision frequency is " + CollisionFreq);
         }
 
     }
