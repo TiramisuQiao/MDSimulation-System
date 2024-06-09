@@ -399,9 +399,9 @@ public class MDSimulation {
     }
 
     public static void main(String[] args) {
-        String options = "Collision frequency";
+        String options = "Brownian motion";
         if ( options.equals("Brownian motion")){
-            boolean drawFig = true;
+            boolean drawFig = false;
             if (drawFig){
                 StdDraw.enableDoubleBuffering();
                 StdDraw.setXscale(0,10);
@@ -409,16 +409,7 @@ public class MDSimulation {
             }
             String dataFilePath = "data/brownian.txt";
             ExperimentRunner runner = new ExperimentRunner(dataFilePath);
-            ExperimentRunner.SimulationRunner(10, 4000,drawFig);
-        }
-        if(options.equals("Collision frequency")){
-            boolean drawFig = false;
-            String dataFilePath = "data/brownian.txt";
-            ExperimentRunner runner = new ExperimentRunner(dataFilePath);
-            ExperimentRunner.SimulationRunner(10, 4000,drawFig);
-            double intervalBetweenCollisions = ExperimentRunner.getAvgCollisions();
-            double CollisionFreq = 1 / intervalBetweenCollisions;
-            System.out.println("The Collision frequency is " + CollisionFreq);
+            ExperimentRunner.SimulationRunner(10, 40,false);
         }
 
     }
