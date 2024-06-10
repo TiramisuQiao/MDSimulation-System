@@ -16,8 +16,8 @@ public class Generator {
 
     public List<Particle> particlesWithMaxwellPDF() {
         for (int i = 0; i < N; i++) {
-            double rx = StdRandom.uniformDouble(1,999)/100;
-            double ry = StdRandom.uniformDouble(1,999)/100;
+            double rx = StdRandom.uniformDouble(1,99999)/10000;
+            double ry = StdRandom.uniformDouble(1,99999)/10000;
             double sigma = Math.sqrt(K_BOLTZMANN * T / m);
             double vx = StdRandom.gaussian(0,sigma);
             double vy = StdRandom.gaussian(0,sigma);
@@ -33,6 +33,6 @@ public class Generator {
         return particles;
     }
     public double getSigma(){
-        return K_BOLTZMANN * T / m;
+        return Math.sqrt(K_BOLTZMANN * T / m);
     }
 }

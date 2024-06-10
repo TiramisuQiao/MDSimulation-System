@@ -51,7 +51,7 @@ public class ParticleCollisionSystem {
             if (clock >= t_max) {
                 break;
             }
-            System.out.println(clock);
+            // System.out.println(clock);
             if (!e.wasSuperveningEvent()) {
                 Particle a = e.getParticleA();
                 Particle b = e.getParticleB();
@@ -92,6 +92,7 @@ public class ParticleCollisionSystem {
             if (clock >= t_max) {
                 break;
             }
+            // System.out.println(clock);
             if (!e.wasSuperveningEvent()) {
                 Particle a = e.getParticleA();
                 Particle b = e.getParticleB();
@@ -104,7 +105,7 @@ public class ParticleCollisionSystem {
                             p.getPosition().getY() - oldPosition.getY());
                     double euclidean_distance = Math.sqrt(dr.getNormSq());
                     distance_interval.add(euclidean_distance);
-                    if (p.getIndex() == 1) {
+                    if (p.getIndex() == 1 && clock > 0 ) {
                         path_for_single.add(euclidean_distance);
                     }
                 }
@@ -122,7 +123,7 @@ public class ParticleCollisionSystem {
             }
         }
         if (writeFile) {
-            try (BufferedWriter writer = Files.newBufferedWriter(Paths.get("output.txt"))) {
+            try (BufferedWriter writer = Files.newBufferedWriter(Paths.get("freepath.txt"))) {
                 for (Double fp : path_for_single) {
                     writer.write(fp.toString());
                     writer.newLine();
@@ -168,8 +169,13 @@ public class ParticleCollisionSystem {
     public static double getFreePath() {
         return distance_interval.stream().mapToDouble(d -> d).average().orElse(Double.NaN);
     }
-    public static List<Vector> getFinalVelocity(){
-        return velocity_recording;
+    public static double[] getFinalVelocity(){
+        // return velocity_recording;
+        double[] a = new double[velocity_recording.size() + 1];
+        for(int i = 0; i < velocity_recording.size(); i++){
+            a[i] = Math.sqrt(velocity_recording.get(i).getNormSq());
+        }
+        return a;
     }
 
 }

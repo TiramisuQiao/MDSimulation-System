@@ -12,6 +12,6 @@ public class ExpBrownian {
         List<Particle> particles = rf.readDataFile();
         ParticleCollisionSystem.setL(5);
         ParticleCollisionSystem.setDrawFreq(2);
-        ParticleCollisionSystem.simulation(particles,4000,true);
+        ParticleCollisionSystem.simulation(particles,500,true);
     }
 }
