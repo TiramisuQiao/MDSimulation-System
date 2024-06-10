@@ -13,7 +13,7 @@ Any suggestions is welcome to show.
 3. - [x] Collision frequency
 4. - [x] Root mean-square velocity
 5. - [x] Maxwell-Boltzmann distribution
-6. - [ ] Pressure
+6. - [X] Pressure
 7. - [x] Temperature
 8. - [ ] Diffusion
 9. - [x] Time reversibility
@@ -172,6 +172,20 @@ And in T = 98 K, the hist plot can be shown:
 
 The long-tail effect can not be eliminated due to the algorithm itself.
 ### Pressure
+Using the virial sum, we can evaluated a heated balanced system's pressure.
+
+in a 10 * 10 box with N = 100 particles:
+
+Pressure: 62.40577155014349
+
+in a 100 * 100 box with N = 100 particles:
+
+Pressure: 0.0050962863156554464
+
+These values are consistent with physical expectations. For an ideal gas, as 
+the volume increases with a constant number of particles, the pressure decreases proportionally, 
+which is observed in your results. The actual magnitude of the pressures can vary based on the specific 
+dynamics of the simulation and the chosen units, but the trend should align with this inverse relationship.
 
 ### Temperature
 Temperature. Plot temperature over time (should be constant) = 1/N sum(mv^2) /
@@ -192,6 +206,9 @@ And Also we can Plot the temperature
 
 ### Diffusion
 
+The Red particles will distribute avarge in the green particles in the under gif.
+
+![fig8.gif](img/fig8.gif)
 ### Time reversibility
 
 We can move the events in to a specific steps, e.g. , 40 steps, and then we reverse all the particles in the same

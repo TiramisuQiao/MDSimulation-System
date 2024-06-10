@@ -140,4 +140,11 @@ public class Particle {
     public double getRadius() {
         return radius;
     }
+
+    public Particle deepCopy() {
+        Particle p =  new Particle(index,mass,radius,color_red,color_green,color_blue);
+        p.setVelocity(velocity.clone());
+        p.setPosition(position.clone());
+        return p;
+    }
 }

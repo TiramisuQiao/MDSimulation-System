@@ -39,7 +39,6 @@ public class ParticleCollisionSystem {
                                   double t_max,
                                   boolean drawFig
     ) {
-        double timer = 0;
         for (Particle p : particles) {
             update(p, particles);
         }
@@ -219,6 +218,69 @@ public class ParticleCollisionSystem {
         System.out.println("After Reverse 1st Particles Position y: " + r1yy);
 
 
+    }
+    public static double SimulationPressure(List<Particle> particles,
+                                          double t_max){
+        double virialSum = 0;
+        for (Particle p : particles)
+        {
+            update(p, particles);
+        }
+        while (!event_line.isEmpty()) {
+            Event e = event_line.poll();
+            if (clock >= t_max) {
+                break;
+            }
+            // System.out.println(clock);
+            if (!e.wasSuperveningEvent()) {
+                Particle a = e.getParticleA();
+                Particle b = e.getParticleB();
+                double interval = e.getTime() - clock;
+                time_interval.add(interval);
+                for (Particle p : particles) {
+                    p.move(interval);
+                }
+                List<Particle> deepCopiedParticles = deepCopyParticles(particles);
+                clock = e.getTime();
+                if(a != null && b != null) {
+                    a.bounce(b);
+                }else if(a != null && b == null) {
+                    a.bounceX();
+                }else if(a == null && b != null) {
+                    b.bounceY();
+                }else if(a == null && b == null) {
+                    getDraw(particles, drawFreq, false);
+                }
+                update(a, particles);
+                update(b, particles);
+                virialSum += calculateVirialTerm(deepCopiedParticles, a, b);
+            }
+        }
+        for (Particle p: particles) {
+            velocity_recording.add(p.getVelocity());
+        }
+        return virialSum;
+    }
+
+
+    private static double calculateVirialTerm(List<Particle> particles, Particle a, Particle b) {
+        double virialTerm = 0.0;
+        if (a != null && b != null) {
+            Vector r_ij = new Vector(b.getPosition().getX() - a.getPosition().getX(),
+                    b.getPosition().getY() - a.getPosition().getY());
+            Vector deltaP = new Vector(b.getVelocity().getX() - a.getVelocity().getX(),
+                    b.getVelocity().getY() - a.getVelocity().getY());
+            virialTerm = r_ij.dotProduct(deltaP);
+        }
+        return virialTerm;
+    }
+
+    private static List<Particle> deepCopyParticles(List<Particle> particles) {
+        List<Particle> copiedParticles = new ArrayList<>();
+        for (Particle p : particles) {
+            copiedParticles.add(p.deepCopy());
+        }
+        return copiedParticles;
     }
     public static List<Particle> getReverse(List<Particle> particles) {
         for(Particle p : particles) {
