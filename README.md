@@ -14,9 +14,9 @@ Any suggestions is welcome to show.
 4. - [x] Root mean-square velocity
 5. - [x] Maxwell-Boltzmann distribution
 6. - [ ] Pressure
-7. - [ ] Temperature
+7. - [x] Temperature
 8. - [ ] Diffusion
-9. - [ ] Time reversibility
+9. - [x] Time reversibility
 10. - [ ] Maxwell's demon
 
 ## Things After Computation
@@ -193,5 +193,26 @@ And Also we can Plot the temperature
 ### Diffusion
 
 ### Time reversibility
+
+We can move the events in to a specific steps, e.g. , 40 steps, and then we reverse all the particles in the same
+velocity value but in a inverse direction. Then start the simulation again to see the reverse.
+
+Results:
+
+INTX:0.38
+
+INTY:0.8
+
+steps: 40
+
+Reverse all the particles
+
+Reverse steps: 40
+
+After Reverse 1st Particles Position x: 0.38
+
+After Reverse 1st Particles Position y: 0.8
+
+Because there still has the calculation loss in double, so it is not perform where well in the long steps.
 
 ### Maxwell's demon

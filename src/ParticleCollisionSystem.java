@@ -135,6 +135,99 @@ public class ParticleCollisionSystem {
 
 
     }
+    public static void SimulationReverse(List<Particle> particles,
+                                         int steps_max){
+        int steps = 0;
+        for (Particle p : particles) {
+            update(p, particles);
+        }
+        while (!event_line.isEmpty()) {
+            Event e = event_line.poll();
+            // System.out.println(clock);
+            if(steps >= steps_max ) {
+                break;
+            }
+            steps += 1;
+            if (!e.wasSuperveningEvent()) {
+                Particle a = e.getParticleA();
+                Particle b = e.getParticleB();
+                double interval = e.getTime() - clock;
+                time_interval.add(interval);
+                for (Particle p : particles) {
+                    p.move(interval);
+                }
+                clock = e.getTime();
+
+                if (a != null && b != null) {
+                    a.bounce(b);
+                } else if (a != null && b == null) {
+                    a.bounceX();
+                } else {
+                    b.bounceY();
+                }
+                update(a, particles);
+                update(b, particles);
+
+            }
+        }
+        System.out.println("steps: " + steps);
+        System.out.println("Reverse all the particles");
+        for(Particle p : particles) {
+            double rev_x = -p.getVelocity().getX();
+            double rev_y = -p.getVelocity().getY();
+            p.setVelocity(new Vector(rev_x, rev_y));
+        }
+
+        int rev_steps = 0;
+        event_line.clear();
+        clock = 0;
+        for (Particle p : particles) {
+            update(p, particles);
+        }
+        while (!event_line.isEmpty()) {
+            Event e = event_line.poll();
+            // System.out.println(clock);
+            if(rev_steps >= steps_max ) {
+                break;
+            }
+            rev_steps = rev_steps + 1;
+            if (!e.wasSuperveningEvent()) {
+                Particle a = e.getParticleA();
+                Particle b = e.getParticleB();
+                double interval = e.getTime() - clock;
+                time_interval.add(interval);
+                for (Particle p : particles) {
+                    p.move(interval);
+                }
+                clock = e.getTime();
+                if (a != null && b != null) {
+                    a.bounce(b);
+                } else if (a != null && b == null) {
+                    a.bounceX();
+                } else {
+                    b.bounceY();
+                }
+                update(a, particles);
+                update(b, particles);
+
+            }
+        }
+        System.out.println("Reverse steps: " + rev_steps);
+        double r1xx = particles.get(0).getPosition().getX();
+        double r1yy = particles.get(0).getPosition().getY();
+        System.out.println("After Reverse 1st Particles Position x: " + r1xx);
+        System.out.println("After Reverse 1st Particles Position y: " + r1yy);
+
+
+    }
+    public static List<Particle> getReverse(List<Particle> particles) {
+        for(Particle p : particles) {
+            double rev_x = -p.getVelocity().getX();
+            double rev_y = -p.getVelocity().getY();
+            p.setVelocity(new Vector(rev_x, rev_y));
+        }
+        return particles;
+    }
 
 
     public static void getDraw(List<Particle> particles, double drawFreq, boolean drawFig) {
