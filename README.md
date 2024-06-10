@@ -144,6 +144,21 @@ The long-tail effect can not be eliminated due to the algorithm itself.
 ### Pressure
 
 ### Temperature
+Temperature. Plot temperature over time (should be constant) = 1/N sum(mv^2) /
+(d k), where d = dimension = 2, k = Boltzmann's constant.
+
+First we can use the Maxwell-Boltzmann distribution to generate the
+particles under the specific temperature.
+
+In 98K, by once experiment:
+
+Expected temperature: 98.0
+
+Calculated temperature: 99.45088318614972
+
+And Also we can Plot the temperature
+
+![fig7-1.png](img/fig7-1.png)
 
 ### Diffusion
 
