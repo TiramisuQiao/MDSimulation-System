@@ -27,8 +27,8 @@ public class IOFile {
             double ry = scanner.nextDouble();
             double vx = scanner.nextDouble();
             double vy = scanner.nextDouble();
-            double radius = scanner.nextDouble();
             double mass = scanner.nextDouble();
+            double radius = scanner.nextDouble();
             int color_red = scanner.nextInt();
             int color_green = scanner.nextInt();
             int color_blue = scanner.nextInt();
